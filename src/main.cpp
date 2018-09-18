@@ -13,11 +13,14 @@
 #include <stream_compaction/thrust.h>
 #include "testing_helpers.hpp"
 
-const int SIZE = 1 << 8; // feel free to change the size of array
+const int SIZE = 1 << 19; // feel free to change the size of array
 const int NPOT = SIZE - 3; // Non-Power-Of-Two
 int *a = new int[SIZE];
 int *b = new int[SIZE];
 int *c = new int[SIZE];
+
+int *cudaDataArrayA; // device array for read/write during scan
+int *cudaDataArrayB; // device array for read/write during scan
 
 int main(int argc, char* argv[]) {
     // Scan tests
@@ -30,6 +33,14 @@ int main(int argc, char* argv[]) {
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
+
+	// initialize CUDA arrays
+	cudaMalloc((void**)&cudaDataArrayA, SIZE * sizeof(int));
+	checkCUDAErrorFn("cudaMalloc tempA failed!");
+	cudaMalloc((void**)&cudaDataArrayB, SIZE * sizeof(int));
+	checkCUDAErrorFn("cudaMalloc tempB failed!");
+
+	cudaDeviceSynchronize();
 
     // initialize b using StreamCompaction::CPU::scan you implement
     // We use b for further comparison. Make sure your StreamCompaction::CPU::scan is correct.
@@ -47,9 +58,10 @@ int main(int argc, char* argv[]) {
     printArray(NPOT, b, true);
     printCmpResult(NPOT, b, c);
 
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
     zeroArray(SIZE, c);
     printDesc("naive scan, power-of-two");
-    StreamCompaction::Naive::scan(SIZE, c, a);
+    StreamCompaction::Naive::scan(SIZE, c, a, cudaDataArrayA, cudaDataArrayB);
     printElapsedTime(StreamCompaction::Naive::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
@@ -60,27 +72,30 @@ int main(int argc, char* argv[]) {
 	StreamCompaction::Naive::scan(SIZE, c, a);
 	printArray(SIZE, c, true); */
 
-    zeroArray(SIZE, c);
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
+	zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
-    StreamCompaction::Naive::scan(NPOT, c, a);
+    StreamCompaction::Naive::scan(NPOT, c, a, cudaDataArrayA, cudaDataArrayB);
     printElapsedTime(StreamCompaction::Naive::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(SIZE, c, true);
     printCmpResult(NPOT, b, c);
 
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, power-of-two");
-    StreamCompaction::Efficient::scan(SIZE, c, a);
+    StreamCompaction::Efficient::scan(SIZE, SIZE, c, a, cudaDataArrayA);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
     zeroArray(SIZE, c);
     printDesc("work-efficient scan, non-power-of-two");
-    StreamCompaction::Efficient::scan(NPOT, c, a);
+    StreamCompaction::Efficient::scan(SIZE, NPOT, c, a, cudaDataArrayA);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
-
+	
     zeroArray(SIZE, c);
     printDesc("thrust scan, power-of-two");
     StreamCompaction::Thrust::scan(SIZE, c, a);
@@ -133,16 +148,20 @@ int main(int argc, char* argv[]) {
     printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaDataArrayB, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, power-of-two");
-    count = StreamCompaction::Efficient::compact(SIZE, c, a);
+    count = StreamCompaction::Efficient::compact(SIZE, SIZE, c, a, cudaDataArrayA, cudaDataArrayB);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(count, c, true);
     printCmpLenResult(count, expectedCount, b, c);
 
+	cudaMemcpy(cudaDataArrayA, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaDataArrayB, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
     zeroArray(SIZE, c);
     printDesc("work-efficient compact, non-power-of-two");
-    count = StreamCompaction::Efficient::compact(NPOT, c, a);
+    count = StreamCompaction::Efficient::compact(SIZE, NPOT, c, a, cudaDataArrayA, cudaDataArrayB);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
@@ -151,4 +170,7 @@ int main(int argc, char* argv[]) {
 	delete[] a;
 	delete[] b;
 	delete[] c;
+
+	cudaFree(cudaDataArrayA);
+	cudaFree(cudaDataArrayB);
 }

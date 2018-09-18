@@ -14,7 +14,6 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
     exit(EXIT_FAILURE);
 }
 
-
 namespace StreamCompaction {
     namespace Common {
 
@@ -24,6 +23,7 @@ namespace StreamCompaction {
          */
         __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
             // TODO
+			// written in efficient.cu
         }
 
         /**
@@ -33,7 +33,7 @@ namespace StreamCompaction {
         __global__ void kernScatter(int n, int *odata,
                 const int *idata, const int *bools, const int *indices) {
             // TODO
+			// written in efficient.cu
         }
-
     }
 }
