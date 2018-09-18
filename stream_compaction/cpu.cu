@@ -18,8 +18,17 @@ namespace StreamCompaction {
          * (Optional) For better understanding before starting moving to GPU, you can simulate your GPU scan in this function first.
          */
         void scan(int n, int *odata, const int *idata) {
+
+            if(n == 0) return;
+
 	        timer().startCpuTimer();
             // TODO
+
+            odata[0] = 0;
+            for(int i = 1; i < n; i++) {
+                odata[i] = idata[i - 1] + odata[i - 1];
+            }
+
 	        timer().endCpuTimer();
         }
 
@@ -31,8 +40,16 @@ namespace StreamCompaction {
         int compactWithoutScan(int n, int *odata, const int *idata) {
 	        timer().startCpuTimer();
             // TODO
+
+            int count = 0;
+            for(int i = 0; i < n; i++) {
+                if(idata[i] != 0) {
+                    odata[count++] = idata[i];
+                }
+            }
+
 	        timer().endCpuTimer();
-            return -1;
+            return count;
         }
 
         /**
@@ -41,10 +58,38 @@ namespace StreamCompaction {
          * @returns the number of elements remaining after compaction.
          */
         int compactWithScan(int n, int *odata, const int *idata) {
+            if(n == 0) return 0;
 	        timer().startCpuTimer();
-	        // TODO
+            // TODO
+            
+            int count = 0;
+
+            int *tmp = (int*)malloc(n * sizeof(int));
+            for(int i = 0; i < n; i++) {
+                if(idata[i] == 0) {
+                    tmp[i] = 0;
+                } else {
+                    tmp[i] = 1;
+                }
+            }
+
+            int *scan = (int*)malloc(n * sizeof(int));
+            scan[0] = 0;
+            for(int i = 1; i < n; i++) {
+                scan[i] = tmp[i - 1] + scan[i - 1];
+            }
+            
+            for(int i = 0; i < n; i++) {
+                if(tmp[i]) {
+                    odata[scan[i]] = idata[i];
+                    count++;
+                }
+            }
+
 	        timer().endCpuTimer();
-            return -1;
+			free(tmp);
+			free(scan);
+            return count;
         }
     }
 }
