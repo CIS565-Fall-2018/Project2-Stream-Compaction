@@ -12,6 +12,7 @@
 
 #define FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define checkCUDAError(msg) checkCUDAErrorFn(msg, FILENAME, __LINE__)
+#define BLOCK_SIZE 1024
 
 /**
  * Check for CUDA errors; print and exit if there was a problem.
@@ -36,6 +37,8 @@ namespace StreamCompaction {
 
         __global__ void kernScatter(int n, int *odata,
                 const int *idata, const int *bools, const int *indices);
+
+        __global__ void kernConvertScanToExclusive(int n, int exclusiveScan[], const int inclusiveScan[]);
 
 	    /**
 	    * This class is used for timing the performance
@@ -113,6 +116,8 @@ namespace StreamCompaction {
 		    PerformanceTimer(PerformanceTimer&&) = delete;
 		    PerformanceTimer& operator=(const PerformanceTimer&) = delete;
 		    PerformanceTimer& operator=(PerformanceTimer&&) = delete;
+
+
 
 	    private:
 		    cudaEvent_t event_start = nullptr;

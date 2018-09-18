@@ -19,8 +19,17 @@ namespace StreamCompaction {
          */
         void scan(int n, int *odata, const int *idata) {
 	        timer().startCpuTimer();
-            // TODO
+	        scanNoTimer(n, odata, idata);
 	        timer().endCpuTimer();
+        }
+
+        void scanNoTimer(int n, int *odata, const int *idata) {
+        	odata[0] = 0; //Add identity
+        	int sum = 0;
+        	for (int i = 0; i < n - 1; i++){
+        		sum += idata[i];
+        		odata[i + 1] = sum;
+        	}
         }
 
         /**
@@ -30,9 +39,16 @@ namespace StreamCompaction {
          */
         int compactWithoutScan(int n, int *odata, const int *idata) {
 	        timer().startCpuTimer();
-            // TODO
+            int index = 0;
+
+	        for (int i = 0; i < n; i++) {
+            	if (idata[i] != 0){
+            		odata[index] = idata[i];
+            		index ++;
+            	}
+            }
 	        timer().endCpuTimer();
-            return -1;
+            return index;
         }
 
         /**
@@ -41,10 +57,27 @@ namespace StreamCompaction {
          * @returns the number of elements remaining after compaction.
          */
         int compactWithScan(int n, int *odata, const int *idata) {
-	        timer().startCpuTimer();
-	        // TODO
+        	int idx = 0;
+        	int booleanArray[n];
+        	timer().startCpuTimer();
+        	for (int i = 0; i < n; i++) {
+        		if (idata[i] != 0) {
+        			booleanArray[i] = 1;
+        		} else {
+        			booleanArray[i] = 0;
+        		}
+        	}
+        	int indexArray[n];
+        	scanNoTimer(n, indexArray, booleanArray);
+        	// Finally, scatter
+        	for (int i = 0; i < n; i++) {
+        		if (idata[i] != 0) {
+        			idx = indexArray[i];
+        			odata[idx] = idata[i];
+        		}
+        	}
 	        timer().endCpuTimer();
-            return -1;
+            return idx + 1;
         }
     }
 }
