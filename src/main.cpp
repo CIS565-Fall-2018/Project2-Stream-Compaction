@@ -11,9 +11,11 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/naive_sm.h>
+#include <stream_compaction/efficient_sm.h>
 #include "testing_helpers.hpp"
-
-const int SIZE = 1 << 8; // feel free to change the size of array
+// If you want to increase the size of array, make sure also increase BlockSize in algorithm implemented with shared memory
+const int SIZE = 1 << 7; 
 const int NPOT = SIZE - 3; // Non-Power-Of-Two
 int *a = new int[SIZE];
 int *b = new int[SIZE];
@@ -71,7 +73,7 @@ int main(int argc, char* argv[]) {
     printDesc("work-efficient scan, power-of-two");
     StreamCompaction::Efficient::scan(SIZE, c, a);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    //printArray(SIZE, c, true);
+    printArray(SIZE, c, true);
     printCmpResult(SIZE, b, c);
 
     zeroArray(SIZE, c);
@@ -94,6 +96,35 @@ int main(int argc, char* argv[]) {
     printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(NPOT, c, true);
     printCmpResult(NPOT, b, c);
+
+    zeroArray(SIZE, c);
+    printDesc("naive scan with shared memory, power of two");
+    StreamCompaction::NaiveSM::scan(SIZE, c, a);
+    printElapsedTime(StreamCompaction::NaiveSM::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    // printArray(SIZE, c, true);
+    printCmpResult(SIZE, b, c);
+
+    zeroArray(SIZE, c);
+    printDesc("naive scan with shared memory, non-power-of-two");
+    StreamCompaction::NaiveSM::scan(NPOT, c, a);
+    printElapsedTime(StreamCompaction::NaiveSM::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    // printArray(NPOT, c, true);
+    printCmpResult(NPOT, b, c);
+
+    zeroArray(SIZE, c);
+    printDesc("efficient scan with shared memory, power of two");
+    StreamCompaction::NaiveSM::scan(SIZE, c, a);
+    printElapsedTime(StreamCompaction::EfficientSM::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    // printArray(SIZE, c, true);
+    printCmpResult(SIZE, b, c);
+
+    zeroArray(SIZE, c);
+    printDesc("efficient scan with shared memory, non-power-of-two");
+    StreamCompaction::NaiveSM::scan(NPOT, c, a);
+    printElapsedTime(StreamCompaction::EfficientSM::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    // printArray(NPOT, c, true);
+    printCmpResult(NPOT, b, c);
+
 
     printf("\n");
     printf("*****************************\n");
@@ -144,7 +175,7 @@ int main(int argc, char* argv[]) {
     printDesc("work-efficient compact, non-power-of-two");
     count = StreamCompaction::Efficient::compact(NPOT, c, a);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
-    //printArray(count, c, true);
+    printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
 
     system("pause"); // stop Win32 console from closing on exit
