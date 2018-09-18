@@ -5,12 +5,25 @@
 
 namespace StreamCompaction {
     namespace CPU {
+
         using StreamCompaction::Common::PerformanceTimer;
         PerformanceTimer& timer()
         {
 	        static PerformanceTimer timer;
 	        return timer;
         }
+
+		void printArray(int n, int *a, bool abridged = false) {
+			printf("    [ ");
+			for (int i = 0; i < n; i++) {
+				if (abridged && i + 2 == 15 && n > 16) {
+					i = n - 2;
+					printf("... ");
+				}
+				printf("%3d ", a[i]);
+			}
+			printf("]\n");
+		}
 
         /**
          * CPU scan (prefix sum).
@@ -19,7 +32,14 @@ namespace StreamCompaction {
          */
         void scan(int n, int *odata, const int *idata) {
 	        timer().startCpuTimer();
-            // TODO
+
+			odata[0] = 0;
+
+			for(int i = 1; i < n; ++i)
+			{
+				odata[i] = odata[i - 1] + idata[i - 1];
+			}
+
 	        timer().endCpuTimer();
         }
 
@@ -30,9 +50,18 @@ namespace StreamCompaction {
          */
         int compactWithoutScan(int n, int *odata, const int *idata) {
 	        timer().startCpuTimer();
-            // TODO
+
+			int outIndex = 0;
+			for (int i = 0; i < n; ++i)
+			{
+				if (idata[i] != 0)
+				{
+					odata[outIndex++] = idata[i];
+				}
+			}
+
 	        timer().endCpuTimer();
-            return -1;
+            return (outIndex);
         }
 
         /**
@@ -41,10 +70,44 @@ namespace StreamCompaction {
          * @returns the number of elements remaining after compaction.
          */
         int compactWithScan(int n, int *odata, const int *idata) {
+
+			// Keeping allocations outside of timer
+			auto *tempValidator = new int[n];
+			auto *scanArray = new int[n];
+
 	        timer().startCpuTimer();
-	        // TODO
+
+			// 1. Compute temporary array
+			for (int i = 0; i < n; ++i)
+			{
+				tempValidator[i] = (idata[i] != 0 ? 1 : 0);
+			}
+
+			// 2. Perform exclusive scan
+			scanArray[0] = 0;
+			for (int i = 1; i < n; ++i)
+			{
+				scanArray[i] = scanArray[i - 1] + tempValidator[i - 1];
+			}
+
+
+			// 3. Scatter
+			int outIndex = 0;
+			for(int i = 0; i < n; ++i)
+			{
+				if(tempValidator[i] != 0)
+				{
+					outIndex = scanArray[i];
+					odata[outIndex] = idata[i];
+				}
+			}
+
 	        timer().endCpuTimer();
-            return -1;
+
+			delete[] tempValidator;
+			delete[] scanArray;
+
+            return (outIndex + 1);
         }
     }
 }
