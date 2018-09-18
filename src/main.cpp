@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 	onesArray(SIZE, c);
 	printDesc("1s array for finding bugs");
 	StreamCompaction::Naive::scan(SIZE, c, a);
-	printArray(SIZE, c, true); */
+	printArray(SIZE, c, true);*/
 
     zeroArray(SIZE, c);
     printDesc("naive scan, non-power-of-two");
