@@ -130,3 +130,9 @@ namespace StreamCompaction {
 	    };
     }
 }
+
+// Used as a boolean function for elaborating if a certain element meets criterion
+// 1 for not met, 0 for met
+enum ElementAttribute { HAS_MET, NOT_MET };
+# define MEETCRITERION 0
+# define BLOCKSIZE 1024
