@@ -112,6 +112,8 @@ See next section for observations.
 
 # Questions
 
+This is mostly just a continuation of Runtime Analysis for this assignment.
+
 ### Write a brief explanation of the phenomena you see in the comparison between the different implementations. Can you find the performance bottlenecks? Is it memory I/O? Computation? Is it different for each implementation?
 
 `cpu` - since there's no memory overhead and manipulation, it definitely relies mainly on element count `O(n)`.
