@@ -18,11 +18,17 @@ namespace StreamCompaction {
          * Performs prefix-sum (aka scan) on idata, storing the result into odata.
          */
         void scan(int n, int *odata, const int *idata) {
-            timer().startGpuTimer();
-            // TODO use `thrust::exclusive_scan`
-            // example: for device_vectors dv_in and dv_out:
-            // thrust::exclusive_scan(dv_in.begin(), dv_in.end(), dv_out.begin());
+            
+			thrust::host_vector<int> hv(n);
+			thrust::copy(idata, idata + n, hv.begin());
+			thrust::device_vector<int> i_dv = hv;
+			thrust::device_vector<int> o_dv(n);
+
+			timer().startGpuTimer();
+			thrust::exclusive_scan(i_dv.begin(), i_dv.end(), o_dv.begin());
             timer().endGpuTimer();
+
+			thrust::copy(o_dv.begin(), o_dv.end(), odata);
         }
     }
 }
