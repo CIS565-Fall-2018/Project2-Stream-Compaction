@@ -79,6 +79,17 @@ int main(int argc, char* argv[]) {
     StreamCompaction::Efficient::scan(NPOT, c, a);
     printElapsedTime(StreamCompaction::Efficient::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
     //printArray(NPOT, c, true);
+	//std::cout << "my result: "<< std::endl;
+	//for (int i = 0; i < SIZE; ++i)
+	//{
+	//	std::cout << c[i] << " ";
+	//}
+	//std::cout << std::endl;
+	//std::cout << "correct result: " << std::endl;
+	//for (int i = 0; i < SIZE; ++i)
+	//{
+	//	std::cout << b[i] << " ";
+	//}
     printCmpResult(NPOT, b, c);
 
     zeroArray(SIZE, c);
